@@ -69,7 +69,7 @@ html {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Taller Celulares" />
-
+<meta name="viewport" content="width=device-width, initial-scale=1" />   
         <link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png" />
         <link rel="icon" type="image/png" sizes="72x72" href="/icon-72.png" />
         <link rel="icon" type="image/png" sizes="96x96" href="/icon-96.png" />
