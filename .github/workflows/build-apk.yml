@@ -19,7 +19,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
         
     - name: Setup Java JDK
       uses: actions/setup-java@v4
@@ -31,7 +30,7 @@ jobs:
       uses: android-actions/setup-android@v3
       
     - name: Install dependencies
-      run: npm ci
+      run: npm install
       
     - name: Build Next.js app
       run: npm run build
@@ -40,7 +39,10 @@ jobs:
       run: npm install -g @capacitor/cli
       
     - name: Add Android platform
-      run: npx cap add android
+      run: |
+        if [ ! -d "android" ]; then
+          npx cap add android
+        fi
       
     - name: Sync Capacitor
       run: npx cap sync android
@@ -49,11 +51,17 @@ jobs:
       run: |
         cd android
         chmod +x ./gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon --stacktrace
         
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: taller-celulares-debug.apk
+        name: taller-celulares-debug-apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
+        
+    - name: APK Info
+      run: |
+        echo "✅ APK generada exitosamente!"
+        echo "📱 Descarga la APK desde la pestaña 'Actions' de este repositorio"
+        echo "📁 Busca el artifact 'taller-celulares-debug-apk'"
