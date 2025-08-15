@@ -175,28 +175,26 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header con estadísticas */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Garantías</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl sm:text-2xl font-bold">Gestión de Garantías</h2>
+          <p className="text-sm sm:text-base text-gray-600">
             {filteredWarranties.length} garantías • {counts.active} activas • {counts.expiring} por vencer
           </p>
         </div>
       </div>
 
-      {/* Alertas de garantías por vencer */}
       {counts.expiring > 0 && (
         <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="text-orange-800 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-sm sm:text-base text-orange-800 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
               Garantías por Vencer
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-orange-700">
+          <CardContent className="pt-0">
+            <p className="text-xs sm:text-sm text-orange-700">
               Tienes {counts.expiring} garantía{counts.expiring > 1 ? "s" : ""} que vence
               {counts.expiring > 1 ? "n" : ""} en los próximos 7 días.
             </p>
@@ -204,57 +202,58 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
         </Card>
       )}
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedStatus("all")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{counts.all}</div>
-            <div className="text-sm text-gray-600">Total</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold">{counts.all}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Total</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:bg-green-50" onClick={() => setSelectedStatus("active")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{counts.active}</div>
-            <div className="text-sm text-gray-600">Activas</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">{counts.active}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Activas</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-orange-50" onClick={() => setSelectedStatus("expiring")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">{counts.expiring}</div>
-            <div className="text-sm text-gray-600">Por Vencer</div>
+        <Card
+          className="cursor-pointer hover:bg-orange-50 col-span-2 sm:col-span-1"
+          onClick={() => setSelectedStatus("expiring")}
+        >
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-orange-600">{counts.expiring}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Por Vencer</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedStatus("expired")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gray-600">{counts.expired}</div>
-            <div className="text-sm text-gray-600">Vencidas</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-gray-600">{counts.expired}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Vencidas</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:bg-red-50" onClick={() => setSelectedStatus("claimed")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{counts.claimed}</div>
-            <div className="text-sm text-gray-600">Reclamadas</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-red-600">{counts.claimed}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Reclamadas</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Buscar por cliente o dispositivo..."
+            placeholder="Buscar garantías..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 text-sm sm:text-base"
           />
         </div>
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
         >
-          <option value="all">Todas las garantías</option>
+          <option value="all">Todas</option>
           <option value="active">Activas</option>
           <option value="expiring">Por vencer</option>
           <option value="expired">Vencidas</option>
@@ -265,18 +264,18 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
       {/* Lista de garantías */}
       {filteredWarranties.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Shield className="w-12 h-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay garantías</h3>
-            <p className="text-gray-600 text-center mb-4">
+          <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+            <Shield className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No hay garantías</h3>
+            <p className="text-sm sm:text-base text-gray-600 text-center mb-4">
               {searchTerm || selectedStatus !== "all"
-                ? "No se encontraron garantías con los filtros aplicados"
-                : "Las garantías se crean automáticamente cuando completas trabajos"}
+                ? "No se encontraron garantías"
+                : "Las garantías se crean automáticamente"}
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredWarranties.map((warranty) => {
             const status = getWarrantyStatus(warranty)
             const StatusIcon = status.icon
@@ -284,24 +283,27 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
 
             return (
               <Card key={warranty.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col gap-3 sm:gap-4">
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-semibold">{warranty.customerName}</h3>
-                        <Badge className={status.color}>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <h3 className="text-base sm:text-lg font-semibold truncate">{warranty.customerName}</h3>
+                        <Badge className={`${status.color} text-xs w-fit`}>
                           <span className="flex items-center gap-1">
-                            <StatusIcon className="w-4 h-4" />
+                            <StatusIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                             {status.label}
                           </span>
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">Dispositivo:</span> {warranty.deviceInfo}
-                        </div>
-                        <div>
-                          <span className="font-medium">Duración:</span> {warranty.warrantyMonths} meses
+
+                      <div className="space-y-1 text-xs sm:text-sm text-gray-600">
+                        <div className="flex flex-col sm:flex-row sm:gap-4">
+                          <div className="truncate">
+                            <span className="font-medium">Dispositivo:</span> {warranty.deviceInfo}
+                          </div>
+                          <div>
+                            <span className="font-medium">Duración:</span> {warranty.warrantyMonths} meses
+                          </div>
                         </div>
                         <div>
                           <span className="font-medium">{daysRemaining > 0 ? "Días restantes:" : "Vencida hace:"}</span>{" "}
@@ -318,8 +320,9 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span>Inicio: {formatDate(warranty.startDate)}</span>
+
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        <span>{formatDate(warranty.startDate)}</span>
                         <span>•</span>
                         <span>Vence: {formatDate(warranty.endDate)}</span>
                         {warranty.claimDate && (
@@ -330,9 +333,15 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => onView(warranty)}>
-                        <Eye className="w-4 h-4 mr-1" />
+
+                    <div className="flex gap-2 pt-2 border-t border-gray-100">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onView(warranty)}
+                        className="flex-1 text-xs sm:text-sm"
+                      >
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Ver
                       </Button>
                       {warranty.status === "active" &&
@@ -342,9 +351,9 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
                             variant="outline"
                             size="sm"
                             onClick={() => onProcessClaim(warranty)}
-                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            className="flex-1 text-xs sm:text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                           >
-                            <FileText className="w-4 h-4 mr-1" />
+                            <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                             Reclamar
                           </Button>
                         )}

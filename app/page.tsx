@@ -62,53 +62,53 @@ export default function HomePage() {
   }
 
   const renderDashboard = () => (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Resumen general del taller</p>
+        <h1 className="text-xl md:text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm md:text-base text-gray-600 mt-1">Resumen general del taller</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inventario Total</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Inventario Total</CardTitle>
+            <Package className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalInventory}</div>
+            <div className="text-lg md:text-2xl font-bold">{stats.totalInventory}</div>
             <p className="text-xs text-muted-foreground">productos en stock</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Stock Bajo</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-xs md:text-sm font-medium">Stock Bajo</CardTitle>
+            <AlertTriangle className="h-3 w-3 md:h-4 md:w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.lowStockItems}</div>
+            <div className="text-lg md:text-2xl font-bold text-orange-600">{stats.lowStockItems}</div>
             <p className="text-xs text-muted-foreground">productos por reponer</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Trabajos Pendientes</CardTitle>
-            <Wrench className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Trabajos Pendientes</CardTitle>
+            <Wrench className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingJobs}</div>
+            <div className="text-lg md:text-2xl font-bold">{stats.pendingJobs}</div>
             <p className="text-xs text-muted-foreground">en proceso</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Garantías Activas</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Garantías Activas</CardTitle>
+            <Shield className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeWarranties}</div>
+            <div className="text-lg md:text-2xl font-bold">{stats.activeWarranties}</div>
             <p className="text-xs text-muted-foreground">vigentes</p>
           </CardContent>
         </Card>
@@ -116,63 +116,63 @@ export default function HomePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
             Ventas de Hoy
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-600">${stats.todayRevenue.toLocaleString()}</div>
-          <p className="text-sm text-muted-foreground mt-1">Ingresos del día actual</p>
+          <div className="text-2xl md:text-3xl font-bold text-green-600">${stats.todayRevenue.toLocaleString()}</div>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">Ingresos del día actual</p>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Acciones Rápidas</CardTitle>
+            <CardTitle className="text-base md:text-lg">Acciones Rápidas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 md:space-y-3">
             <button
               onClick={() => setCurrentView("jobs")}
-              className="w-full p-3 text-left bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              className="w-full p-4 md:p-3 text-left bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors touch-manipulation"
             >
-              <div className="font-medium">Nuevo Trabajo</div>
-              <div className="text-sm text-gray-600">Registrar nueva reparación</div>
+              <div className="font-medium text-sm md:text-base">Nuevo Trabajo</div>
+              <div className="text-xs md:text-sm text-gray-600">Registrar nueva reparación</div>
             </button>
             <button
               onClick={() => setCurrentView("inventory")}
-              className="w-full p-3 text-left bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+              className="w-full p-4 md:p-3 text-left bg-green-50 hover:bg-green-100 rounded-lg transition-colors touch-manipulation"
             >
-              <div className="font-medium">Agregar Inventario</div>
-              <div className="text-sm text-gray-600">Añadir nuevos productos</div>
+              <div className="font-medium text-sm md:text-base">Agregar Inventario</div>
+              <div className="text-xs md:text-sm text-gray-600">Añadir nuevos productos</div>
             </button>
             <button
               onClick={() => setCurrentView("sales")}
-              className="w-full p-3 text-left bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+              className="w-full p-4 md:p-3 text-left bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors touch-manipulation"
             >
-              <div className="font-medium">Registrar Venta</div>
-              <div className="text-sm text-gray-600">Nueva venta directa</div>
+              <div className="font-medium text-sm md:text-base">Registrar Venta</div>
+              <div className="text-xs md:text-sm text-gray-600">Nueva venta directa</div>
             </button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Estado del Sistema</CardTitle>
+            <CardTitle className="text-base md:text-lg">Estado del Sistema</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 md:space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Base de Datos</span>
-              <span className="text-sm text-green-600 font-medium">Supabase</span>
+              <span className="text-xs md:text-sm">Base de Datos</span>
+              <span className="text-xs md:text-sm text-green-600 font-medium">Supabase</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Modo Offline</span>
-              <span className="text-sm text-green-600 font-medium">Habilitado</span>
+              <span className="text-xs md:text-sm">Modo Offline</span>
+              <span className="text-xs md:text-sm text-green-600 font-medium">Habilitado</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Última Actualización</span>
-              <span className="text-sm text-gray-600">{new Date().toLocaleTimeString()}</span>
+              <span className="text-xs md:text-sm">Última Actualización</span>
+              <span className="text-xs md:text-sm text-gray-600">{new Date().toLocaleTimeString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -186,25 +186,25 @@ export default function HomePage() {
         return renderDashboard()
       case "inventory":
         return (
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             <InventoryManager />
           </div>
         )
       case "jobs":
         return (
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             <JobsManager />
           </div>
         )
       case "warranties":
         return (
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             <WarrantiesManager />
           </div>
         )
       case "sales":
         return (
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             <SalesManager />
           </div>
         )

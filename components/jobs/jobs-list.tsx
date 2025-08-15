@@ -171,72 +171,72 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header con estadísticas */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Trabajos</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl sm:text-2xl font-bold">Gestión de Trabajos</h2>
+          <p className="text-sm sm:text-base text-gray-600">
             {filteredJobs.length} trabajos • {statusCounts.pendiente + statusCounts.en_proceso} activos
           </p>
         </div>
-        <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto text-sm sm:text-base">
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Trabajo
         </Button>
       </div>
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedStatus("all")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{statusCounts.all}</div>
-            <div className="text-sm text-gray-600">Total</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold">{statusCounts.all}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Total</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:bg-yellow-50" onClick={() => setSelectedStatus("pendiente")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{statusCounts.pendiente}</div>
-            <div className="text-sm text-gray-600">Pendientes</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-yellow-600">{statusCounts.pendiente}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Pendientes</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:bg-blue-50" onClick={() => setSelectedStatus("en_proceso")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{statusCounts.en_proceso}</div>
-            <div className="text-sm text-gray-600">En Proceso</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600">{statusCounts.en_proceso}</div>
+            <div className="text-xs sm:text-sm text-gray-600">En Proceso</div>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:bg-green-50" onClick={() => setSelectedStatus("completado")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{statusCounts.completado}</div>
-            <div className="text-sm text-gray-600">Completados</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-green-600">{statusCounts.completado}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Completados</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setSelectedStatus("entregado")}>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-gray-600">{statusCounts.entregado}</div>
-            <div className="text-sm text-gray-600">Entregados</div>
+        <Card
+          className="cursor-pointer hover:bg-gray-50 col-span-2 sm:col-span-1"
+          onClick={() => setSelectedStatus("entregado")}
+        >
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-gray-600">{statusCounts.entregado}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Entregados</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Buscar por cliente, teléfono, dispositivo o problema..."
+            placeholder="Buscar trabajos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 text-sm sm:text-base"
           />
         </div>
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
         >
-          <option value="all">Todos los estados</option>
+          <option value="all">Todos</option>
           <option value="pendiente">Pendientes</option>
           <option value="en_proceso">En Proceso</option>
           <option value="completado">Completados</option>
@@ -247,53 +247,55 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
       {/* Lista de trabajos */}
       {filteredJobs.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Clock className="w-12 h-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay trabajos</h3>
-            <p className="text-gray-600 text-center mb-4">
-              {searchTerm || selectedStatus !== "all"
-                ? "No se encontraron trabajos con los filtros aplicados"
-                : "Comienza registrando tu primer trabajo de reparación"}
+          <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+            <Clock className="w-8 sm:w-12 h-8 sm:h-12 text-gray-400 mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No hay trabajos</h3>
+            <p className="text-sm sm:text-base text-gray-600 text-center mb-4">
+              {searchTerm || selectedStatus !== "all" ? "No se encontraron trabajos" : "Registra tu primer trabajo"}
             </p>
-            <Button onClick={onAddNew} variant="outline">
+            <Button onClick={onAddNew} variant="outline" className="text-sm sm:text-base bg-transparent">
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Trabajo
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredJobs.map((job) => (
             <Card key={job.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold">{job.customerName}</h3>
-                      <Badge className={getStatusColor(job.status)}>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <h3 className="text-base sm:text-lg font-semibold truncate">{job.customerName}</h3>
+                      <Badge className={`${getStatusColor(job.status)} text-xs w-fit`}>
                         <span className="flex items-center gap-1">
                           {getStatusIcon(job.status)}
                           {getStatusLabel(job.status)}
                         </span>
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">Teléfono:</span> {job.customerPhone}
+
+                    <div className="space-y-1 text-xs sm:text-sm text-gray-600">
+                      <div className="flex flex-col sm:flex-row sm:gap-4">
+                        <div className="truncate">
+                          <span className="font-medium">Tel:</span> {job.customerPhone}
+                        </div>
+                        <div className="truncate">
+                          <span className="font-medium">Costo:</span> $
+                          {(job.totalCost || job.laborCost + job.partsCost || 0).toLocaleString()}
+                        </div>
                       </div>
-                      <div>
+                      <div className="truncate">
                         <span className="font-medium">Dispositivo:</span> {job.deviceBrand} {job.deviceModel}
                       </div>
-                      <div>
+                      <div className="truncate">
                         <span className="font-medium">Problema:</span> {job.problemDescription}
                       </div>
-                      <div>
-                        <span className="font-medium">Costo:</span> $
-                        {(job.totalCost || job.laborCost + job.partsCost || 0).toLocaleString()}
-                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>Iniciado: {formatDate(job.createdAt)}</span>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                      <span>{formatDate(job.createdAt)}</span>
                       <span>•</span>
                       <span>{getDaysElapsed(job.createdAt)} días</span>
                       {job.actualCompletion && (
@@ -304,13 +306,24 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => onView(job)}>
-                      <Eye className="w-4 h-4 mr-1" />
+
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onView(job)}
+                      className="flex-1 text-xs sm:text-sm"
+                    >
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                       Ver
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => onEdit(job)}>
-                      <Edit className="w-4 h-4 mr-1" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(job)}
+                      className="flex-1 text-xs sm:text-sm"
+                    >
+                      <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                       Editar
                     </Button>
                   </div>

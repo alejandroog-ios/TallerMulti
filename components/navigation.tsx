@@ -29,7 +29,7 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
     <>
       {/* Header móvil */}
       <header className="bg-blue-600 text-white p-4 flex items-center justify-between lg:hidden">
-        <h1 className="text-xl font-bold">TallerCell Pro</h1>
+        <h1 className="text-xl font-bold">TMultiDigital</h1>
         <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)} className="text-white hover:bg-blue-700">
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </Button>

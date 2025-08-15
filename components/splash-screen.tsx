@@ -50,8 +50,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           <div className="mx-auto w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
             <Smartphone className="w-10 h-10 text-blue-600" />
           </div>
-          <h1 className="text-4xl font-bold text-white">TallerCell Pro</h1>
-          <p className="text-blue-200 text-lg">Sistema de Gestión Integral</p>
+          <h1 className="text-4xl font-bold text-white">MultiDigital</h1>
+          <p className="text-blue-200 text-lg">Sistema de Gestión Integral by DevPro</p>
         </div>
 
         {/* Indicador de progreso */}
