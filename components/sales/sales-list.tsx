@@ -19,6 +19,8 @@ export default function SalesList({ onAddNew }: SalesListProps) {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
   const [selectedType, setSelectedType] = useState<string>("all")
   const [dailySummary, setDailySummary] = useState<DailySummary | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadSales()
@@ -29,11 +31,28 @@ export default function SalesList({ onAddNew }: SalesListProps) {
     calculateDailySummary()
   }, [sales, selectedDate, selectedType])
 
-  const loadSales = () => {
-    const allSales = salesStorage.getAll()
-    // Ordenar por fecha, más recientes primero
-    allSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    setSales(allSales)
+  const loadSales = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const allSales = await salesStorage.getAll()
+
+      // Verificar que allSales es un array
+      if (Array.isArray(allSales)) {
+        // Ordenar por fecha, más recientes primero
+        allSales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        setSales(allSales)
+      } else {
+        console.error("[v0] Sales data is not an array:", allSales)
+        setSales([])
+      }
+    } catch (err) {
+      console.error("[v0] Error loading sales:", err)
+      setError("Error al cargar las ventas")
+      setSales([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filterSales = () => {
@@ -151,6 +170,36 @@ export default function SalesList({ onAddNew }: SalesListProps) {
       month: "long",
       year: "numeric",
     })
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando ventas...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={loadSales} variant="outline">
+                Reintentar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

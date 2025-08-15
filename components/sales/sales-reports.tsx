@@ -11,6 +11,8 @@ export default function SalesReports() {
   const [sales, setSales] = useState<DailySale[]>([])
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "year">("week")
   const [reportData, setReportData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadSales()
@@ -20,13 +22,29 @@ export default function SalesReports() {
     generateReport()
   }, [sales, selectedPeriod])
 
-  const loadSales = () => {
-    const allSales = salesStorage.getAll()
-    setSales(allSales)
+  const loadSales = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const allSales = await salesStorage.getAll()
+      // Validar que allSales sea un array
+      if (Array.isArray(allSales)) {
+        setSales(allSales)
+      } else {
+        console.error("[v0] Sales data is not an array:", allSales)
+        setSales([])
+      }
+    } catch (err) {
+      console.error("[v0] Error loading sales:", err)
+      setError("Error al cargar las ventas")
+      setSales([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const generateReport = () => {
-    if (sales.length === 0) {
+    if (!Array.isArray(sales) || sales.length === 0) {
       setReportData(null)
       return
     }
@@ -147,6 +165,33 @@ export default function SalesReports() {
       default:
         return method
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-pulse" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Cargando reportes...</h3>
+          <p className="text-gray-600">Obteniendo datos de ventas</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <BarChart3 className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar reportes</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={loadSales} variant="outline">
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (!reportData) {

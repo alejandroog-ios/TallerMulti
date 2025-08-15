@@ -19,6 +19,7 @@ export default function InventoryList({ onAddNew, onEdit }: InventoryListProps) 
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadItems()
@@ -28,9 +29,17 @@ export default function InventoryList({ onAddNew, onEdit }: InventoryListProps) 
     filterItems()
   }, [items, searchTerm, selectedCategory])
 
-  const loadItems = () => {
-    const allItems = inventoryStorage.getAll()
-    setItems(allItems)
+  const loadItems = async () => {
+    try {
+      setLoading(true)
+      const allItems = await inventoryStorage.getAll()
+      setItems(allItems)
+    } catch (error) {
+      console.error("Error loading inventory items:", error)
+      setItems([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filterItems = () => {
@@ -52,10 +61,15 @@ export default function InventoryList({ onAddNew, onEdit }: InventoryListProps) 
     setFilteredItems(filtered)
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("¿Estás seguro de que quieres eliminar este producto?")) {
-      inventoryStorage.delete(id)
-      loadItems()
+      try {
+        await inventoryStorage.delete(id)
+        await loadItems()
+      } catch (error) {
+        console.error("Error deleting inventory item:", error)
+        alert("Error al eliminar el producto. Inténtalo de nuevo.")
+      }
     }
   }
 
@@ -85,7 +99,20 @@ export default function InventoryList({ onAddNew, onEdit }: InventoryListProps) 
     }
   }
 
-  const lowStockItems = filteredItems.filter((item) => item.quantity <= item.minStock)
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <Package className="w-12 h-12 text-gray-400 mb-4 mx-auto animate-pulse" />
+            <p className="text-gray-600">Cargando inventario...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const lowStockItems = filteredItems.filter((item) => item.stock <= item.minStock)
 
   return (
     <div className="space-y-6">
@@ -120,7 +147,7 @@ export default function InventoryList({ onAddNew, onEdit }: InventoryListProps) 
                     {item.name} - {item.brand} {item.model}
                   </span>
                   <Badge variant="outline" className="text-orange-700 border-orange-300">
-                    {item.quantity} restantes
+                    {item.stock} restantes
                   </Badge>
                 </div>
               ))}
@@ -190,10 +217,8 @@ export default function InventoryList({ onAddNew, onEdit }: InventoryListProps) 
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Stock:</span>
-                  <span
-                    className={`font-medium ${item.quantity <= item.minStock ? "text-orange-600" : "text-green-600"}`}
-                  >
-                    {item.quantity} unidades
+                  <span className={`font-medium ${item.stock <= item.minStock ? "text-orange-600" : "text-green-600"}`}>
+                    {item.stock} unidades
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

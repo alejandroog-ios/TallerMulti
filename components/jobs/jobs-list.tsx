@@ -20,6 +20,8 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadJobs()
@@ -29,11 +31,24 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
     filterJobs()
   }, [jobs, searchTerm, selectedStatus])
 
-  const loadJobs = () => {
-    const allJobs = jobsStorage.getAll()
-    // Ordenar por fecha de inicio, más recientes primero
-    allJobs.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-    setJobs(allJobs)
+  const loadJobs = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const allJobs = await jobsStorage.getAll()
+      if (Array.isArray(allJobs)) {
+        allJobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        setJobs(allJobs)
+      } else {
+        setJobs([])
+      }
+    } catch (err) {
+      console.error("Error loading jobs:", err)
+      setError("Error al cargar los trabajos")
+      setJobs([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filterJobs = () => {
@@ -42,11 +57,11 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
     if (searchTerm) {
       filtered = filtered.filter(
         (job) =>
-          job.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.clientPhone.includes(searchTerm) ||
+          job.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.customerPhone.includes(searchTerm) ||
           job.deviceBrand.toLowerCase().includes(searchTerm.toLowerCase()) ||
           job.deviceModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.problem.toLowerCase().includes(searchTerm.toLowerCase()),
+          job.problemDescription.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
@@ -123,6 +138,36 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
     en_proceso: jobs.filter((job) => job.status === "en_proceso").length,
     completado: jobs.filter((job) => job.status === "completado").length,
     entregado: jobs.filter((job) => job.status === "entregado").length,
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2 animate-spin" />
+            <p className="text-gray-600">Cargando trabajos...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar trabajos</h3>
+            <p className="text-gray-600 text-center mb-4">{error}</p>
+            <Button onClick={loadJobs} variant="outline">
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -224,7 +269,7 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold">{job.clientName}</h3>
+                      <h3 className="text-lg font-semibold">{job.customerName}</h3>
                       <Badge className={getStatusColor(job.status)}>
                         <span className="flex items-center gap-1">
                           {getStatusIcon(job.status)}
@@ -234,26 +279,27 @@ export default function JobsList({ onAddNew, onEdit, onView }: JobsListProps) {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                       <div>
-                        <span className="font-medium">Teléfono:</span> {job.clientPhone}
+                        <span className="font-medium">Teléfono:</span> {job.customerPhone}
                       </div>
                       <div>
                         <span className="font-medium">Dispositivo:</span> {job.deviceBrand} {job.deviceModel}
                       </div>
                       <div>
-                        <span className="font-medium">Problema:</span> {job.problem}
+                        <span className="font-medium">Problema:</span> {job.problemDescription}
                       </div>
                       <div>
-                        <span className="font-medium">Costo:</span> ${job.finalCost || job.estimatedCost}
+                        <span className="font-medium">Costo:</span> $
+                        {(job.totalCost || job.laborCost + job.partsCost || 0).toLocaleString()}
                       </div>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>Iniciado: {formatDate(job.startDate)}</span>
+                      <span>Iniciado: {formatDate(job.createdAt)}</span>
                       <span>•</span>
-                      <span>{getDaysElapsed(job.startDate)} días</span>
-                      {job.completionDate && (
+                      <span>{getDaysElapsed(job.createdAt)} días</span>
+                      {job.actualCompletion && (
                         <>
                           <span>•</span>
-                          <span>Completado: {formatDate(job.completionDate)}</span>
+                          <span>Completado: {formatDate(job.actualCompletion)}</span>
                         </>
                       )}
                     </div>

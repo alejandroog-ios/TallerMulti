@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Trash2 } from "lucide-react"
-import { jobsStorage, inventoryStorage, warrantiesStorage } from "@/lib/storage"
+import { jobsStorage, inventoryStorage, warrantiesStorage, salesStorage } from "@/lib/storage"
 import type { Job, InventoryItem } from "@/lib/types"
 
 interface JobFormProps {
@@ -20,11 +20,11 @@ interface JobFormProps {
 
 export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
   const [formData, setFormData] = useState({
-    clientName: "",
-    clientPhone: "",
+    customerName: "",
+    customerPhone: "",
     deviceBrand: "",
     deviceModel: "",
-    problem: "",
+    problemDescription: "",
     diagnosis: "",
     status: "pendiente" as "pendiente" | "en_proceso" | "completado" | "entregado",
     estimatedCost: 0,
@@ -44,36 +44,41 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
     loadAvailableItems()
     if (job) {
       setFormData({
-        clientName: job.clientName,
-        clientPhone: job.clientPhone,
-        deviceBrand: job.deviceBrand,
-        deviceModel: job.deviceModel,
-        problem: job.problem,
-        diagnosis: job.diagnosis,
-        status: job.status,
-        estimatedCost: job.estimatedCost,
-        finalCost: job.finalCost,
-        notes: job.notes,
-        hasWarranty: job.hasWarranty,
-        warrantyDays: job.warrantyDays,
+        customerName: job.customerName ?? "",
+        customerPhone: job.customerPhone ?? "",
+        deviceBrand: job.deviceBrand ?? "",
+        deviceModel: job.deviceModel ?? "",
+        problemDescription: job.problemDescription ?? "",
+        diagnosis: job.diagnosis ?? "",
+        status: job.status ?? "pendiente",
+        estimatedCost: job.estimatedCost ?? 0,
+        finalCost: job.finalCost ?? 0,
+        notes: job.notes ?? "",
+        hasWarranty: job.hasWarranty ?? true,
+        warrantyDays: job.warrantyDays ?? 30,
       })
       setPartsUsed(job.partsUsed || [])
     }
   }, [job])
 
-  const loadAvailableItems = () => {
-    const items = inventoryStorage.getAll()
-    setAvailableItems(items)
+  const loadAvailableItems = async () => {
+    try {
+      const items = await inventoryStorage.getAll()
+      setAvailableItems(Array.isArray(items) ? items : [])
+    } catch (error) {
+      console.error("Error loading available items:", error)
+      setAvailableItems([])
+    }
   }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.clientName.trim()) {
-      newErrors.clientName = "El nombre del cliente es requerido"
+    if (!formData.customerName.trim()) {
+      newErrors.customerName = "El nombre del cliente es requerido"
     }
-    if (!formData.clientPhone.trim()) {
-      newErrors.clientPhone = "El teléfono es requerido"
+    if (!formData.customerPhone.trim()) {
+      newErrors.customerPhone = "El teléfono es requerido"
     }
     if (!formData.deviceBrand.trim()) {
       newErrors.deviceBrand = "La marca del dispositivo es requerida"
@@ -81,8 +86,8 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
     if (!formData.deviceModel.trim()) {
       newErrors.deviceModel = "El modelo del dispositivo es requerido"
     }
-    if (!formData.problem.trim()) {
-      newErrors.problem = "La descripción del problema es requerida"
+    if (!formData.problemDescription.trim()) {
+      newErrors.problemDescription = "La descripción del problema es requerida"
     }
     if (formData.estimatedCost <= 0) {
       newErrors.estimatedCost = "El costo estimado debe ser mayor a 0"
@@ -109,49 +114,89 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
         deliveryDate: formData.status === "entregado" ? new Date() : undefined,
       }
 
-      let savedJob: Job
+      let savedJob: Job | null = null
 
       if (job) {
-        // Actualizar trabajo existente
-        savedJob = jobsStorage.update(job.id, jobData) as Job
+        savedJob = await jobsStorage.update(job.id, jobData)
       } else {
-        // Crear nuevo trabajo
-        savedJob = jobsStorage.add(jobData)
+        savedJob = await jobsStorage.add(jobData)
       }
 
-      // Actualizar inventario si se usaron partes
+      if (!savedJob) {
+        throw new Error("Error al guardar el trabajo")
+      }
+
       if (partsUsed.length > 0) {
-        partsUsed.forEach((part) => {
-          const item = inventoryStorage.getAll().find((i) => i.id === part.itemId)
-          if (item && item.quantity >= part.quantity) {
-            inventoryStorage.update(part.itemId, {
-              quantity: item.quantity - part.quantity,
+        const allItems = await inventoryStorage.getAll()
+        for (const part of partsUsed) {
+          const item = allItems.find((i) => i.id === part.itemId)
+          if (item && item.stock >= part.quantity) {
+            await inventoryStorage.update(part.itemId, {
+              stock: item.stock - part.quantity,
             })
           }
-        })
+        }
       }
 
-      // Crear garantía si el trabajo está completado y tiene garantía
-      if ((formData.status === "completado" || formData.status === "entregado") && formData.hasWarranty && savedJob) {
+      if ((formData.status === "completado" || formData.status === "entregado") && savedJob && savedJob.id) {
+        console.log("[v0] Job completed, creating automatic sale...")
+        console.log("[v0] Job status:", formData.status)
+        console.log("[v0] Saved job ID:", savedJob.id)
+        console.log("[v0] Final cost:", formData.finalCost)
+        console.log("[v0] Estimated cost:", formData.estimatedCost)
+
+        try {
+          const saleAmount = formData.finalCost > 0 ? formData.finalCost : formData.estimatedCost
+          console.log("[v0] Sale amount calculated:", saleAmount)
+
+          const saleData = {
+            date: new Date().toISOString().split("T")[0],
+            type: "reparacion",
+            description: `Reparación ${formData.deviceBrand} ${formData.deviceModel} - ${formData.customerName}`,
+            amount: saleAmount,
+            paymentMethod: "efectivo",
+            jobId: savedJob.id,
+            clientName: formData.customerName,
+          }
+
+          console.log("[v0] Sale data to be created:", saleData)
+
+          const createdSale = await salesStorage.add(saleData)
+          console.log("[v0] Sale created successfully:", createdSale)
+        } catch (saleError) {
+          console.error("[v0] Error creating automatic sale:", saleError)
+        }
+      }
+
+      if (
+        (formData.status === "completado" || formData.status === "entregado") &&
+        formData.hasWarranty &&
+        savedJob &&
+        savedJob.id
+      ) {
         const startDate = new Date()
         const endDate = new Date()
         endDate.setDate(startDate.getDate() + formData.warrantyDays)
 
-        warrantiesStorage.add({
-          jobId: savedJob.id,
-          clientName: formData.clientName,
-          deviceInfo: `${formData.deviceBrand} ${formData.deviceModel}`,
-          workDone: formData.diagnosis || formData.problem,
-          warrantyDays: formData.warrantyDays,
-          startDate,
-          endDate,
-          isActive: true,
-        })
+        try {
+          await warrantiesStorage.add({
+            jobId: savedJob.id,
+            customerName: formData.customerName,
+            deviceInfo: `${formData.deviceBrand} ${formData.deviceModel}`,
+            warrantyMonths: Math.ceil(formData.warrantyDays / 30),
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            status: "active",
+          })
+        } catch (warrantyError) {
+          console.error("Error creating warranty:", warrantyError)
+        }
       }
 
       onSave()
     } catch (error) {
       console.error("Error saving job:", error)
+      alert("Error al guardar el trabajo. Por favor, intenta de nuevo.")
     } finally {
       setIsSubmitting(false)
     }
@@ -210,34 +255,32 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Información del cliente */}
             <div>
               <h3 className="text-lg font-medium mb-4">Información del Cliente</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Cliente *</label>
                   <Input
-                    value={formData.clientName}
-                    onChange={(e) => handleInputChange("clientName", e.target.value)}
+                    value={formData.customerName}
+                    onChange={(e) => handleInputChange("customerName", e.target.value)}
                     placeholder="Nombre completo"
-                    className={errors.clientName ? "border-red-500" : ""}
+                    className={errors.customerName ? "border-red-500" : ""}
                   />
-                  {errors.clientName && <p className="text-red-500 text-sm mt-1">{errors.clientName}</p>}
+                  {errors.customerName && <p className="text-red-500 text-sm mt-1">{errors.customerName}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
                   <Input
-                    value={formData.clientPhone}
-                    onChange={(e) => handleInputChange("clientPhone", e.target.value)}
+                    value={formData.customerPhone}
+                    onChange={(e) => handleInputChange("customerPhone", e.target.value)}
                     placeholder="Número de teléfono"
-                    className={errors.clientPhone ? "border-red-500" : ""}
+                    className={errors.customerPhone ? "border-red-500" : ""}
                   />
-                  {errors.clientPhone && <p className="text-red-500 text-sm mt-1">{errors.clientPhone}</p>}
+                  {errors.customerPhone && <p className="text-red-500 text-sm mt-1">{errors.customerPhone}</p>}
                 </div>
               </div>
             </div>
 
-            {/* Información del dispositivo */}
             <div>
               <h3 className="text-lg font-medium mb-4">Información del Dispositivo</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,24 +307,25 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
               </div>
             </div>
 
-            {/* Detalles del trabajo */}
             <div>
               <h3 className="text-lg font-medium mb-4">Detalles del Trabajo</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Problema Reportado *</label>
                   <Textarea
-                    value={formData.problem}
-                    onChange={(e) => handleInputChange("problem", e.target.value)}
+                    value={formData.problemDescription || ""}
+                    onChange={(e) => handleInputChange("problemDescription", e.target.value)}
                     placeholder="Describe el problema reportado por el cliente"
-                    className={errors.problem ? "border-red-500" : ""}
+                    className={errors.problemDescription ? "border-red-500" : ""}
                   />
-                  {errors.problem && <p className="text-red-500 text-sm mt-1">{errors.problem}</p>}
+                  {errors.problemDescription && (
+                    <p className="text-red-500 text-sm mt-1">{errors.problemDescription}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Diagnóstico</label>
                   <Textarea
-                    value={formData.diagnosis}
+                    value={formData.diagnosis || ""}
                     onChange={(e) => handleInputChange("diagnosis", e.target.value)}
                     placeholder="Diagnóstico técnico y trabajo realizado"
                   />
@@ -326,7 +370,7 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Notas Adicionales</label>
                   <Textarea
-                    value={formData.notes}
+                    value={formData.notes || ""}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
                     placeholder="Notas adicionales sobre el trabajo"
                   />
@@ -334,7 +378,6 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
               </div>
             </div>
 
-            {/* Partes utilizadas */}
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Partes Utilizadas</h3>
@@ -357,7 +400,7 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
                           <option value="">Seleccionar producto</option>
                           {availableItems.map((item) => (
                             <option key={item.id} value={item.id}>
-                              {item.name} - {item.brand} {item.model} (Stock: {item.quantity})
+                              {item.name} - {item.brand} {item.model} (Stock: {item.stock})
                             </option>
                           ))}
                         </select>
@@ -395,7 +438,6 @@ export default function JobForm({ job, onSave, onCancel }: JobFormProps) {
               )}
             </div>
 
-            {/* Garantía */}
             <div>
               <h3 className="text-lg font-medium mb-4">Garantía</h3>
               <div className="space-y-4">

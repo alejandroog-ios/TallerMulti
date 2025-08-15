@@ -26,12 +26,29 @@ interface WarrantyDetailProps {
 
 export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: WarrantyDetailProps) {
   const [relatedJob, setRelatedJob] = useState<Job | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Buscar el trabajo relacionado
-    const jobs = jobsStorage.getAll()
-    const job = jobs.find((j) => j.id === warranty.jobId)
-    setRelatedJob(job || null)
+    const loadRelatedJob = async () => {
+      try {
+        setLoading(true)
+        const jobs = await jobsStorage.getAll()
+        if (Array.isArray(jobs)) {
+          const job = jobs.find((j) => j.id === warranty.jobId)
+          setRelatedJob(job || null)
+        } else {
+          console.error("[v0] Jobs data is not an array:", jobs)
+          setRelatedJob(null)
+        }
+      } catch (error) {
+        console.error("[v0] Error loading related job:", error)
+        setRelatedJob(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadRelatedJob()
   }, [warranty.jobId])
 
   const getWarrantyStatus = () => {
@@ -43,7 +60,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
       return { status: "claimed", label: "Reclamada", color: "bg-red-100 text-red-800", icon: XCircle }
     }
 
-    if (!warranty.isActive) {
+    if (warranty.status !== "active") {
       return { status: "inactive", label: "Inactiva", color: "bg-gray-100 text-gray-800", icon: XCircle }
     }
 
@@ -59,7 +76,11 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
   }
 
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("es-ES", {
+    if (!date) return "Fecha no disponible"
+    const dateObj = new Date(date)
+    if (isNaN(dateObj.getTime())) return "Fecha inválida"
+
+    return dateObj.toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -91,7 +112,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Garantía #{warranty.id}</h1>
-            <p className="text-gray-600">Cliente: {warranty.clientName}</p>
+            <p className="text-gray-600">Cliente: {warranty.customerName}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -101,7 +122,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
               {status.label}
             </span>
           </Badge>
-          {warranty.isActive && new Date(warranty.endDate) > new Date() && !warranty.claimDate && (
+          {warranty.status === "active" && new Date(warranty.endDate) > new Date() && !warranty.claimDate && (
             <Button onClick={onProcessClaim} className="bg-orange-600 hover:bg-orange-700">
               <FileText className="w-4 h-4 mr-2" />
               Procesar Reclamación
@@ -124,7 +145,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Nombre del Cliente</label>
-                <p className="text-lg">{warranty.clientName}</p>
+                <p className="text-lg">{warranty.customerName}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Dispositivo</label>
@@ -144,13 +165,22 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
             <CardContent>
               <div>
                 <label className="text-sm font-medium text-gray-600">Descripción del Trabajo</label>
-                <p className="mt-1">{warranty.workDone}</p>
+                <p className="mt-1">{warranty.deviceInfo}</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Información del trabajo relacionado */}
-          {relatedJob && (
+          {loading ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Trabajo Relacionado</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500">Cargando información del trabajo...</p>
+              </CardContent>
+            </Card>
+          ) : relatedJob ? (
             <Card>
               <CardHeader>
                 <CardTitle>Trabajo Relacionado</CardTitle>
@@ -159,15 +189,15 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Problema Original</label>
-                    <p className="text-sm">{relatedJob.problem}</p>
+                    <p className="text-sm">{relatedJob.problemDescription}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Costo Final</label>
-                    <p className="text-sm">${relatedJob.finalCost || relatedJob.estimatedCost}</p>
+                    <p className="text-sm">${relatedJob.totalCost || relatedJob.estimatedCost || 0}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Fecha de Inicio</label>
-                    <p className="text-sm">{formatDate(relatedJob.startDate)}</p>
+                    <p className="text-sm">{formatDate(relatedJob.createdAt)}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Estado</label>
@@ -183,7 +213,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
                           <span>
                             {part.itemName} (x{part.quantity})
                           </span>
-                          <span>${(part.price * part.quantity).toLocaleString()}</span>
+                          <span>${((part.price || 0) * (part.quantity || 0)).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
@@ -191,7 +221,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
                 )}
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
           {/* Reclamación (si existe) */}
           {warranty.claimDate && (
@@ -276,7 +306,9 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Duración</label>
-                <p>{warranty.warrantyDays} días</p>
+                <p>
+                  {warranty.warrantyMonths} meses ({warranty.warrantyMonths * 30} días aprox.)
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -296,7 +328,9 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
                       Math.min(
                         100,
                         Math.round(
-                          ((warranty.warrantyDays - Math.max(0, daysRemaining)) / warranty.warrantyDays) * 100,
+                          ((warranty.warrantyMonths * 30 - Math.max(0, daysRemaining)) /
+                            (warranty.warrantyMonths * 30)) *
+                            100,
                         ),
                       ),
                     )}
@@ -315,7 +349,7 @@ export default function WarrantyDetail({ warranty, onBack, onProcessClaim }: War
                             : "bg-green-500"
                     }`}
                     style={{
-                      width: `${Math.max(0, Math.min(100, Math.round(((warranty.warrantyDays - Math.max(0, daysRemaining)) / warranty.warrantyDays) * 100)))}%`,
+                      width: `${Math.max(0, Math.min(100, Math.round(((warranty.warrantyMonths * 30 - Math.max(0, daysRemaining)) / (warranty.warrantyMonths * 30)) * 100)))}%`,
                     }}
                   />
                 </div>

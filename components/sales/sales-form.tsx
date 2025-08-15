@@ -27,15 +27,29 @@ export default function SalesForm({ onSave, onCancel }: SalesFormProps) {
   const [completedJobs, setCompletedJobs] = useState<Job[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingJobs, setIsLoadingJobs] = useState(false)
 
   useEffect(() => {
     loadCompletedJobs()
   }, [])
 
-  const loadCompletedJobs = () => {
-    const jobs = jobsStorage.getAll()
-    const completed = jobs.filter((job) => job.status === "completado" || job.status === "entregado")
-    setCompletedJobs(completed)
+  const loadCompletedJobs = async () => {
+    setIsLoadingJobs(true)
+    try {
+      const jobs = await jobsStorage.getAll()
+      if (Array.isArray(jobs)) {
+        const completed = jobs.filter((job) => job.status === "completado" || job.status === "entregado")
+        setCompletedJobs(completed)
+      } else {
+        console.error("[v0] Jobs data is not an array:", jobs)
+        setCompletedJobs([])
+      }
+    } catch (error) {
+      console.error("[v0] Error loading completed jobs:", error)
+      setCompletedJobs([])
+    } finally {
+      setIsLoadingJobs(false)
+    }
   }
 
   const validateForm = () => {
@@ -75,7 +89,7 @@ export default function SalesForm({ onSave, onCancel }: SalesFormProps) {
         jobId: formData.jobId || undefined,
       }
 
-      salesStorage.add(saleData)
+      await salesStorage.add(saleData)
       onSave()
     } catch (error) {
       console.error("Error saving sale:", error)
@@ -90,21 +104,20 @@ export default function SalesForm({ onSave, onCancel }: SalesFormProps) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
 
-    // Auto-completar información si se selecciona un trabajo
     if (field === "jobId" && value) {
       const selectedJob = completedJobs.find((job) => job.id === value)
       if (selectedJob) {
+        const jobCost = selectedJob.finalCost ?? selectedJob.estimatedCost ?? 0
         setFormData((prev) => ({
           ...prev,
           type: "reparacion",
-          description: `Reparación: ${selectedJob.problem}`,
-          amount: selectedJob.finalCost || selectedJob.estimatedCost,
-          clientName: selectedJob.clientName,
+          description: `Reparación: ${selectedJob.problem ?? "Sin descripción"}`,
+          amount: jobCost,
+          clientName: selectedJob.clientName ?? "",
         }))
       }
     }
 
-    // Limpiar jobId si se cambia el tipo
     if (field === "type" && value !== "reparacion") {
       setFormData((prev) => ({ ...prev, jobId: "" }))
     }
@@ -136,6 +149,11 @@ export default function SalesForm({ onSave, onCancel }: SalesFormProps) {
     }
   }
 
+  const formatPrice = (value: number | undefined | null): string => {
+    const numValue = Number(value) || 0
+    return numValue.toLocaleString()
+  }
+
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
@@ -165,17 +183,22 @@ export default function SalesForm({ onSave, onCancel }: SalesFormProps) {
                 value={formData.jobId}
                 onChange={(e) => handleInputChange("jobId", e.target.value)}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.jobId ? "border-red-500" : ""}`}
+                disabled={isLoadingJobs}
               >
-                <option value="">Seleccionar trabajo</option>
+                <option value="">{isLoadingJobs ? "Cargando trabajos..." : "Seleccionar trabajo"}</option>
                 {completedJobs.map((job) => (
                   <option key={job.id} value={job.id}>
-                    {job.clientName} - {job.deviceBrand} {job.deviceModel} - $
-                    {(job.finalCost || job.estimatedCost).toLocaleString()}
+                    {job.clientName ?? "Sin nombre"} - {job.deviceBrand ?? "Sin marca"}{" "}
+                    {job.deviceModel ?? "Sin modelo"} - ${formatPrice(job.finalCost ?? job.estimatedCost)}
                   </option>
                 ))}
               </select>
               {errors.jobId && <p className="text-red-500 text-sm mt-1">{errors.jobId}</p>}
-              <p className="text-sm text-gray-500 mt-1">Solo se muestran trabajos completados o entregados</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {isLoadingJobs
+                  ? "Cargando trabajos completados..."
+                  : "Solo se muestran trabajos completados o entregados"}
+              </p>
             </div>
           )}
 
@@ -253,7 +276,7 @@ export default function SalesForm({ onSave, onCancel }: SalesFormProps) {
               </div>
               <div className="flex justify-between">
                 <span>Monto:</span>
-                <span className="font-medium">${formData.amount.toLocaleString()}</span>
+                <span className="font-medium">${formatPrice(formData.amount)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Método de Pago:</span>

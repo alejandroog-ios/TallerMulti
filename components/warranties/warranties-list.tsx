@@ -19,6 +19,8 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
   const [filteredWarranties, setFilteredWarranties] = useState<Warranty[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadWarranties()
@@ -28,11 +30,27 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
     filterWarranties()
   }, [warranties, searchTerm, selectedStatus])
 
-  const loadWarranties = () => {
-    const allWarranties = warrantiesStorage.getAll()
-    // Ordenar por fecha de inicio, más recientes primero
-    allWarranties.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-    setWarranties(allWarranties)
+  const loadWarranties = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const allWarranties = await warrantiesStorage.getAll()
+
+      if (Array.isArray(allWarranties)) {
+        allWarranties.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+        setWarranties(allWarranties)
+      } else {
+        console.error("[v0] Expected array but got:", typeof allWarranties, allWarranties)
+        setWarranties([])
+        setError("Error al cargar las garantías: formato de datos incorrecto")
+      }
+    } catch (err) {
+      console.error("[v0] Error loading warranties:", err)
+      setError("Error al cargar las garantías")
+      setWarranties([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filterWarranties = () => {
@@ -41,9 +59,8 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
     if (searchTerm) {
       filtered = filtered.filter(
         (warranty) =>
-          warranty.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          warranty.deviceInfo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          warranty.workDone.toLowerCase().includes(searchTerm.toLowerCase()),
+          warranty.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          warranty.deviceInfo.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
@@ -52,16 +69,16 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
       filtered = filtered.filter((warranty) => {
         switch (selectedStatus) {
           case "active":
-            return warranty.isActive && new Date(warranty.endDate) > now
+            return warranty.status === "active" && new Date(warranty.endDate) > now
           case "expired":
-            return warranty.isActive && new Date(warranty.endDate) <= now
+            return warranty.status === "active" && new Date(warranty.endDate) <= now
           case "claimed":
-            return warranty.claimDate !== undefined
+            return warranty.status === "claimed"
           case "expiring":
             const daysUntilExpiry = Math.ceil(
               (new Date(warranty.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
             )
-            return warranty.isActive && daysUntilExpiry <= 7 && daysUntilExpiry > 0
+            return warranty.status === "active" && daysUntilExpiry <= 7 && daysUntilExpiry > 0
           default:
             return true
         }
@@ -76,11 +93,11 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
     const endDate = new Date(warranty.endDate)
     const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
-    if (warranty.claimDate) {
+    if (warranty.status === "claimed") {
       return { status: "claimed", label: "Reclamada", color: "bg-red-100 text-red-800", icon: XCircle }
     }
 
-    if (!warranty.isActive) {
+    if (warranty.status !== "active") {
       return { status: "inactive", label: "Inactiva", color: "bg-gray-100 text-gray-800", icon: XCircle }
     }
 
@@ -115,17 +132,47 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
     const now = new Date()
     return {
       all: warranties.length,
-      active: warranties.filter((w) => w.isActive && new Date(w.endDate) > now).length,
-      expired: warranties.filter((w) => w.isActive && new Date(w.endDate) <= now).length,
-      claimed: warranties.filter((w) => w.claimDate !== undefined).length,
+      active: warranties.filter((w) => w.status === "active" && new Date(w.endDate) > now).length,
+      expired: warranties.filter((w) => w.status === "active" && new Date(w.endDate) <= now).length,
+      claimed: warranties.filter((w) => w.status === "claimed").length,
       expiring: warranties.filter((w) => {
         const daysUntilExpiry = Math.ceil((new Date(w.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-        return w.isActive && daysUntilExpiry <= 7 && daysUntilExpiry > 0
+        return w.status === "active" && daysUntilExpiry <= 7 && daysUntilExpiry > 0
       }).length,
     }
   }
 
   const counts = getWarrantyCounts()
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Shield className="w-12 h-12 text-gray-400 mb-4 mx-auto animate-pulse" />
+            <p className="text-gray-600">Cargando garantías...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <XCircle className="w-12 h-12 text-red-400 mb-4" />
+            <h3 className="text-lg font-medium text-red-900 mb-2">Error al cargar garantías</h3>
+            <p className="text-red-700 text-center mb-4">{error}</p>
+            <Button onClick={loadWarranties} variant="outline">
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -196,7 +243,7 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Buscar por cliente, dispositivo o trabajo realizado..."
+            placeholder="Buscar por cliente o dispositivo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -241,7 +288,7 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-semibold">{warranty.clientName}</h3>
+                        <h3 className="text-lg font-semibold">{warranty.customerName}</h3>
                         <Badge className={status.color}>
                           <span className="flex items-center gap-1">
                             <StatusIcon className="w-4 h-4" />
@@ -254,10 +301,7 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
                           <span className="font-medium">Dispositivo:</span> {warranty.deviceInfo}
                         </div>
                         <div>
-                          <span className="font-medium">Trabajo:</span> {warranty.workDone}
-                        </div>
-                        <div>
-                          <span className="font-medium">Duración:</span> {warranty.warrantyDays} días
+                          <span className="font-medium">Duración:</span> {warranty.warrantyMonths} meses
                         </div>
                         <div>
                           <span className="font-medium">{daysRemaining > 0 ? "Días restantes:" : "Vencida hace:"}</span>{" "}
@@ -291,17 +335,19 @@ export default function WarrantiesList({ onView, onProcessClaim }: WarrantiesLis
                         <Eye className="w-4 h-4 mr-1" />
                         Ver
                       </Button>
-                      {warranty.isActive && new Date(warranty.endDate) > new Date() && !warranty.claimDate && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onProcessClaim(warranty)}
-                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                        >
-                          <FileText className="w-4 h-4 mr-1" />
-                          Reclamar
-                        </Button>
-                      )}
+                      {warranty.status === "active" &&
+                        new Date(warranty.endDate) > new Date() &&
+                        !warranty.claimDate && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onProcessClaim(warranty)}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            Reclamar
+                          </Button>
+                        )}
                     </div>
                   </div>
                 </CardContent>

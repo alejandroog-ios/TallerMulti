@@ -75,7 +75,17 @@ export default function JobDetail({ job, onBack, onEdit }: JobDetailProps) {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
-  const totalPartsCost = job.partsUsed?.reduce((sum, part) => sum + part.price * part.quantity, 0) || 0
+  const totalPartsCost =
+    job.partsUsed?.reduce((sum, part) => {
+      const price = typeof part.price === "number" ? part.price : 0
+      const quantity = typeof part.quantity === "number" ? part.quantity : 0
+      return sum + price * quantity
+    }, 0) || 0
+
+  const formatPrice = (value: number | undefined | null): string => {
+    const numValue = typeof value === "number" ? value : 0
+    return numValue.toLocaleString()
+  }
 
   return (
     <div className="space-y-6">
@@ -184,22 +194,28 @@ export default function JobDetail({ job, onBack, onEdit }: JobDetailProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {job.partsUsed.map((part, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                      <div>
-                        <p className="font-medium">{part.itemName}</p>
-                        <p className="text-sm text-gray-600">Cantidad: {part.quantity}</p>
+                  {job.partsUsed.map((part, index) => {
+                    const price = typeof part.price === "number" ? part.price : 0
+                    const quantity = typeof part.quantity === "number" ? part.quantity : 0
+                    const total = price * quantity
+
+                    return (
+                      <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                        <div>
+                          <p className="font-medium">{part.itemName || "Parte sin nombre"}</p>
+                          <p className="text-sm text-gray-600">Cantidad: {quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">${formatPrice(total)}</p>
+                          <p className="text-sm text-gray-600">${formatPrice(price)} c/u</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">${(part.price * part.quantity).toLocaleString()}</p>
-                        <p className="text-sm text-gray-600">${part.price} c/u</p>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div className="pt-3 border-t">
                     <div className="flex justify-between items-center font-semibold">
                       <span>Total Partes:</span>
-                      <span>${totalPartsCost.toLocaleString()}</span>
+                      <span>${formatPrice(totalPartsCost)}</span>
                     </div>
                   </div>
                 </div>
@@ -247,18 +263,18 @@ export default function JobDetail({ job, onBack, onEdit }: JobDetailProps) {
             <CardContent className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Costo Estimado:</span>
-                <span>${job.estimatedCost.toLocaleString()}</span>
+                <span>${formatPrice(job.estimatedCost)}</span>
               </div>
-              {job.finalCost > 0 && (
+              {(job.finalCost || 0) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Costo Final:</span>
-                  <span className="font-semibold">${job.finalCost.toLocaleString()}</span>
+                  <span className="font-semibold">${formatPrice(job.finalCost)}</span>
                 </div>
               )}
               {totalPartsCost > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Costo Partes:</span>
-                  <span>${totalPartsCost.toLocaleString()}</span>
+                  <span>${formatPrice(totalPartsCost)}</span>
                 </div>
               )}
             </CardContent>

@@ -28,20 +28,33 @@ export default function HomePage() {
     }
   }, [isLoading])
 
-  const updateStats = () => {
-    const inventory = inventoryStorage.getAll()
-    const jobs = jobsStorage.getAll()
-    const warranties = warrantiesStorage.getAll()
-    const todaySales = salesStorage.getByDate(new Date().toISOString())
+  const updateStats = async () => {
+    try {
+      const [inventory, jobs, warranties, todaySales] = await Promise.all([
+        inventoryStorage.getAll(),
+        jobsStorage.getAll(),
+        warrantiesStorage.getAll(),
+        salesStorage.getByDate(new Date().toISOString()),
+      ])
 
-    setStats({
-      totalInventory: inventory.length,
-      lowStockItems: inventory.filter((item) => item.quantity <= item.minStock).length,
-      pendingJobs: jobs.filter((job) => job.status === "pendiente" || job.status === "en_proceso").length,
-      activeWarranties: warranties.filter((warranty) => warranty.isActive && new Date(warranty.endDate) > new Date())
-        .length,
-      todayRevenue: todaySales.reduce((sum, sale) => sum + sale.amount, 0),
-    })
+      setStats({
+        totalInventory: inventory.length,
+        lowStockItems: inventory.filter((item) => item.quantity <= item.minStock).length,
+        pendingJobs: jobs.filter((job) => job.status === "pendiente" || job.status === "en_proceso").length,
+        activeWarranties: warranties.filter((warranty) => warranty.isActive && new Date(warranty.endDate) > new Date())
+          .length,
+        todayRevenue: todaySales.reduce((sum, sale) => sum + sale.amount, 0),
+      })
+    } catch (error) {
+      console.error("[v0] Error updating stats:", error)
+      setStats({
+        totalInventory: 0,
+        lowStockItems: 0,
+        pendingJobs: 0,
+        activeWarranties: 0,
+        todayRevenue: 0,
+      })
+    }
   }
 
   if (isLoading) {
@@ -150,8 +163,8 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Almacenamiento Local</span>
-              <span className="text-sm text-green-600 font-medium">Activo</span>
+              <span className="text-sm">Base de Datos</span>
+              <span className="text-sm text-green-600 font-medium">Supabase</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Modo Offline</span>

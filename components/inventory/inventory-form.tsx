@@ -21,7 +21,7 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
     category: "pantalla" as "pantalla" | "bateria" | "accesorio",
     brand: "",
     model: "",
-    quantity: 0,
+    stock: 0,
     price: 0,
     minStock: 5,
   })
@@ -31,13 +31,13 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
   useEffect(() => {
     if (item) {
       setFormData({
-        name: item.name,
-        category: item.category,
-        brand: item.brand,
-        model: item.model,
-        quantity: item.quantity,
-        price: item.price,
-        minStock: item.minStock,
+        name: item.name || "",
+        category: item.category || "pantalla",
+        brand: item.brand || "",
+        model: item.model || "",
+        stock: item.stock ?? 0,
+        price: item.price ?? 0,
+        minStock: item.minStock ?? 5,
       })
     }
   }, [item])
@@ -54,8 +54,8 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
     if (!formData.model.trim()) {
       newErrors.model = "El modelo es requerido"
     }
-    if (formData.quantity < 0) {
-      newErrors.quantity = "La cantidad no puede ser negativa"
+    if (formData.stock < 0) {
+      newErrors.stock = "El stock no puede ser negativo"
     }
     if (formData.price <= 0) {
       newErrors.price = "El precio debe ser mayor a 0"
@@ -94,7 +94,10 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
   }
 
   const handleInputChange = (field: string, value: string | number) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value === "" ? (typeof prev[field as keyof typeof prev] === "number" ? 0 : "") : value,
+    }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
@@ -155,22 +158,22 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock Actual *</label>
               <Input
                 type="number"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange("quantity", Number.parseInt(e.target.value) || 0)}
+                value={formData.stock.toString()}
+                onChange={(e) => handleInputChange("stock", Number.parseInt(e.target.value) || 0)}
                 min="0"
-                className={errors.quantity ? "border-red-500" : ""}
+                className={errors.stock ? "border-red-500" : ""}
               />
-              {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>}
+              {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Precio *</label>
               <Input
                 type="number"
-                value={formData.price}
+                value={formData.price.toString()}
                 onChange={(e) => handleInputChange("price", Number.parseFloat(e.target.value) || 0)}
                 min="0"
                 step="0.01"
@@ -184,7 +187,7 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
               <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
               <Input
                 type="number"
-                value={formData.minStock}
+                value={formData.minStock.toString()}
                 onChange={(e) => handleInputChange("minStock", Number.parseInt(e.target.value) || 0)}
                 min="0"
                 className={errors.minStock ? "border-red-500" : ""}
